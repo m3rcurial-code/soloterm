@@ -102,7 +102,7 @@ func (dv *DiceView) setupModal() {
 		AddItem(nil, 0, 1, false)
 
 	dv.TextArea.SetFocusFunc(func() {
-		entries := []helpEntry{{"Ctrl+R", "Roll"}, {"Ctrl+S", "Saved Rolls"}}
+		entries := []helpEntry{{"Ctrl+R", "Roll"}, {"Ctrl+S", "Snippets"}}
 		if dv.CanInsert() {
 			entries = append(entries, helpEntry{"Ctrl+O", "Insert"})
 		}

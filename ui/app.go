@@ -33,8 +33,9 @@ const (
 	DICE_MODAL_ID        string = "diceModal"
 	SEARCH_MODAL_ID      string = "searchModal"
 	ORACLE_MODAL_ID      string = "oracleModal"
-	ORACLE_FORM_MODAL_ID string = "oracleFormModal"
-	SNIPPET_MODAL_ID     string = "snippetModal"
+	ORACLE_FORM_MODAL_ID   string = "oracleFormModal"
+	SNIPPET_MODAL_ID       string = "snippetModal"
+	SNIPPET_FORM_MODAL_ID  string = "snippetFormModal"
 )
 
 type AppInfo struct {
@@ -174,6 +175,7 @@ func (a *App) setupUI() {
 		AddPage(ORACLE_MODAL_ID, a.oracleView.Modal, true, false).
 		AddPage(ORACLE_FORM_MODAL_ID, a.oracleView.FormModal, true, false).
 		AddPage(SNIPPET_MODAL_ID, a.snippetView.Modal, true, false).
+		AddPage(SNIPPET_FORM_MODAL_ID, a.snippetView.FormModal, true, false).
 		AddPage(FILE_MODAL_ID, a.fileView.Modal, true, false).
 		AddPage(HELP_MODAL_ID, a.helpModal, true, false).
 		AddPage(CONFIRM_MODAL_ID, a.confirmModal, true, false) // Confirm always on top
@@ -515,6 +517,12 @@ func (a *App) HandleEvent(event Event) {
 		dispatch(event, a.handleSnippetShow)
 	case SNIPPET_CANCEL:
 		dispatch(event, a.handleSnippetCancel)
+	case SNIPPET_SHOW_NEW:
+		dispatch(event, a.handleSnippetShowNew)
+	case SNIPPET_SHOW_EDIT:
+		dispatch(event, a.handleSnippetShowEdit)
+	case SNIPPET_FORM_CANCEL:
+		dispatch(event, a.handleSnippetFormCancel)
 	case SNIPPET_SAVED:
 		dispatch(event, a.handleSnippetSaved)
 	case SNIPPET_DELETE_CONFIRM:

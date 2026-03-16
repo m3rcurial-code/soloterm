@@ -87,8 +87,8 @@ func (f *SnippetForm) Reset(activeGameID *int64) {
 	f.SetFocus(0)
 }
 
-// Populate fills the form with an existing snippet's data
-func (f *SnippetForm) Populate(sr *snippet.Snippet) {
+// PopulateForEdit fills the form with an existing snippet's data
+func (f *SnippetForm) PopulateForEdit(sr *snippet.Snippet) {
 	f.snippetID = &sr.ID
 	f.snippetPos = sr.Position
 	f.nameField.SetText(sr.Name)

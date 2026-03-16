@@ -135,6 +135,60 @@ func TestDiceView_CtrlO_DoesNotInsertWhenNotFromSession(t *testing.T) {
 	assert.Empty(t, app.sessionView.TextArea.GetText())
 }
 
+// TestDiceView_Buttons_RollAndSnippetsAlwaysPresent verifies that Roll and Snippets
+// buttons are always shown when the modal opens, regardless of context.
+func TestDiceView_Buttons_RollAndSnippetsAlwaysPresent(t *testing.T) {
+	app := setupTestApp(t)
+	app.SetFocus(app.gameView.Tree) // not a session — CanInsert is false
+	openDiceModal(t, app)
+
+	require.Len(t, app.diceView.buttons, 2)
+	assert.Equal(t, "Roll", app.diceView.buttons[0].GetLabel())
+	assert.Equal(t, "Snippets", app.diceView.buttons[1].GetLabel())
+}
+
+// TestDiceView_Buttons_InsertNotShownWithoutResult verifies that the Insert button
+// does not appear before any roll has been made, even when opened from a session.
+func TestDiceView_Buttons_InsertNotShownWithoutResult(t *testing.T) {
+	app := setupTestApp(t)
+	openSessionInApp(t, app)
+	openDiceModal(t, app)
+
+	// No roll yet — Insert should be absent
+	require.Len(t, app.diceView.buttons, 2)
+	assert.Equal(t, "Roll", app.diceView.buttons[0].GetLabel())
+	assert.Equal(t, "Snippets", app.diceView.buttons[1].GetLabel())
+}
+
+// TestDiceView_Buttons_InsertAppearsAfterRollFromSession verifies that the Insert
+// button appears after rolling when the modal was opened from the session view.
+func TestDiceView_Buttons_InsertAppearsAfterRollFromSession(t *testing.T) {
+	app := setupTestApp(t)
+	openSessionInApp(t, app)
+	openDiceModal(t, app)
+
+	app.diceView.TextArea.SetText("1d6", true)
+	testHelper.SimulateKey(app.diceView.Modal, app.Application, tcell.KeyCtrlR)
+
+	require.Len(t, app.diceView.buttons, 3)
+	assert.Equal(t, "Roll", app.diceView.buttons[0].GetLabel())
+	assert.Equal(t, "Snippets", app.diceView.buttons[1].GetLabel())
+	assert.Equal(t, "Insert", app.diceView.buttons[2].GetLabel())
+}
+
+// TestDiceView_Buttons_InsertNotShownAfterRollFromNonSession verifies that the
+// Insert button does not appear after rolling when not opened from a session.
+func TestDiceView_Buttons_InsertNotShownAfterRollFromNonSession(t *testing.T) {
+	app := setupTestApp(t)
+	app.SetFocus(app.gameView.Tree)
+	openDiceModal(t, app)
+
+	app.diceView.TextArea.SetText("1d6", true)
+	testHelper.SimulateKey(app.diceView.Modal, app.Application, tcell.KeyCtrlR)
+
+	require.Len(t, app.diceView.buttons, 2, "Insert should not appear when not from a session")
+}
+
 // TestDiceView_Refresh_ClearsState verifies that Refresh wipes the text area,
 // results, and hint state.
 func TestDiceView_Refresh_ClearsState(t *testing.T) {

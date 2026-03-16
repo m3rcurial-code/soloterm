@@ -8,15 +8,39 @@ func (a *App) handleSnippetShow(_ *SnippetShowEvent) {
 }
 
 func (a *App) handleSnippetCancel(_ *SnippetCancelEvent) {
-	a.snippetView.hideForm()
 	a.pages.HidePage(SNIPPET_MODAL_ID)
 	if a.snippetView.returnFocus != nil {
 		a.SetFocus(a.snippetView.returnFocus)
 	}
 }
 
+func (a *App) handleSnippetShowNew(_ *SnippetShowNewEvent) {
+	a.snippetView.refreshGames()
+	a.snippetView.Form.Reset(a.snippetView.activeGameID())
+	a.snippetView.Form.RemoveDeleteButton()
+	a.snippetView.formModal.SetTitle(" New Snippet ")
+	a.pages.ShowPage(SNIPPET_FORM_MODAL_ID)
+	a.SetFocus(a.snippetView.Form)
+}
+
+func (a *App) handleSnippetShowEdit(e *SnippetShowEditEvent) {
+	a.snippetView.refreshGames()
+	a.snippetView.Form.PopulateForEdit(e.Snippet)
+	a.snippetView.Form.AddDeleteButton()
+	a.snippetView.formModal.SetTitle(" Edit Snippet ")
+	a.pages.ShowPage(SNIPPET_FORM_MODAL_ID)
+	a.SetFocus(a.snippetView.Form)
+}
+
+func (a *App) handleSnippetFormCancel(_ *SnippetFormCancelEvent) {
+	a.snippetView.Form.ClearFieldErrors()
+	a.pages.HidePage(SNIPPET_FORM_MODAL_ID)
+	a.SetFocus(a.snippetView.table)
+}
+
 func (a *App) handleSnippetSaved(e *SnippetSavedEvent) {
 	a.snippetView.Form.ClearFieldErrors()
+	a.pages.HidePage(SNIPPET_FORM_MODAL_ID)
 	a.snippetView.Refresh()
 	a.snippetView.selectByID(e.Snippet.ID)
 	a.SetFocus(a.snippetView.table)
@@ -50,8 +74,8 @@ func (a *App) handleSnippetDeleteConfirm(e *SnippetDeleteConfirmEvent) {
 
 func (a *App) handleSnippetDeleted(_ *SnippetDeletedEvent) {
 	a.pages.HidePage(CONFIRM_MODAL_ID)
+	a.pages.HidePage(SNIPPET_FORM_MODAL_ID)
 	a.snippetView.Refresh()
-	a.snippetView.hideForm()
 	a.SetFocus(a.snippetView.table)
 	a.notification.ShowSuccess("Snippet deleted successfully")
 }
@@ -75,7 +99,6 @@ func (a *App) handleSnippetReorder(e *SnippetReorderEvent) {
 }
 
 func (a *App) handleSnippetUse(e *SnippetUseEvent) {
-	a.snippetView.hideForm()
 	a.pages.HidePage(SNIPPET_MODAL_ID)
 	_, start, _ := a.diceView.TextArea.GetSelection()
 	a.diceView.TextArea.Replace(start, start, e.Content+" ")

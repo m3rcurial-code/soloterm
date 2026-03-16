@@ -81,6 +81,9 @@ const (
 
 	SNIPPET_SHOW           UserAction = "snippet_show"
 	SNIPPET_CANCEL         UserAction = "snippet_cancel"
+	SNIPPET_SHOW_NEW       UserAction = "snippet_show_new"
+	SNIPPET_SHOW_EDIT      UserAction = "snippet_show_edit"
+	SNIPPET_FORM_CANCEL    UserAction = "snippet_form_cancel"
 	SNIPPET_SAVED          UserAction = "snippet_saved"
 	SNIPPET_DELETE_CONFIRM UserAction = "snippet_delete_confirm"
 	SNIPPET_DELETED        UserAction = "snippet_deleted"
@@ -419,6 +422,19 @@ type SnippetShowEvent struct {
 }
 
 type SnippetCancelEvent struct {
+	BaseEvent
+}
+
+type SnippetShowNewEvent struct {
+	BaseEvent
+}
+
+type SnippetShowEditEvent struct {
+	BaseEvent
+	Snippet *snippet.Snippet
+}
+
+type SnippetFormCancelEvent struct {
 	BaseEvent
 }
 
