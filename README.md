@@ -115,7 +115,7 @@ Go to the [Releases](https://github.com/curtp/soloterm/releases) page and downlo
 | Linux   | ARM (Raspberry Pi, etc.)  | `soloterm_Linux_arm64`        |
 | Linux   | 64-bit (most desktops)    | `soloterm_Linux_x86_64`       |
 | Windows | ARM                       | `soloterm_Windows_arm64.exe`  |
-| Windows | 64-bit (most desktops).   | `soloterm_Windows_x86_64.exe` |
+| Windows | 64-bit (most desktops)    | `soloterm_Windows_x86_64.exe` |
 
 Not sure which Mac you have? Apple menu → About This Mac. If it says Apple M1/M2/M3, download the ARM build. If it says Intel Core, download the x86_64 build.
 
