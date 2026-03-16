@@ -16,7 +16,7 @@ To install, see the [Installing](#installing) section below.
 * Searching game sessions
 * Random Tables
 * Rolling on lists and random tables
-* Save frequently used rolls for quick re-rolling
+* Snippets for saving frequently used dice rolls and expressions for quick reuse
 * Mouse free navigation
 * Import/Export session logs
 
@@ -130,7 +130,7 @@ If macOS blocks the app, go to **System Settings → Privacy & Security** and cl
 ## 3. Run it
 
 ```bash
-./soloterm_Darwin_arm64   # macOS Apple Silicon — adjust filename as needed
+./soloterm_Darwin_arm64   # replace with your downloaded filename
 ```
 
 **Optional:** move the binary somewhere on your PATH so you can launch it from anywhere:
@@ -140,7 +140,7 @@ mv soloterm_Darwin_arm64 /usr/local/bin/soloterm
 soloterm
 ```
 
-On Windows, double-clicking the `.exe` will open a Command Prompt window and launch the app. You can also run it directly from PowerShell or Windows Terminal.
+On Windows, run the `.exe` from PowerShell, Command Prompt, or Windows Terminal. Double-clicking it may cause the window to close immediately when the app exits, so running it from a terminal is recommended.
 
 # Configuration
 
