@@ -8,8 +8,6 @@ People expressed interest in it, so I thought I'd put it up here on Github.
 
 To install, see the [Installing](#installing) section below.
 
-To see where the data and logs are written, press F1.
-
 ## Features
 * Create multiple games and track multiple sessions per game
 * Create simple characters for quick reference in the app
