@@ -84,6 +84,22 @@ func CreateTestSession(t *testing.T, db *database.DBStore, gameID int64, name st
 	return id
 }
 
+// CreateTestSnippet inserts a snippet row and returns its ID.
+// Requires the snippets table to exist (blank-import soloterm/domain/snippet in your test file).
+func CreateTestSnippet(t *testing.T, db *database.DBStore, name string, content string, position int) int64 {
+	t.Helper()
+	var id int64
+	err := db.Connection.QueryRow(
+		`INSERT INTO snippets (name, content, game_id, position, created_at, updated_at)
+		 VALUES (?, ?, NULL, ?, datetime('now'), datetime('now')) RETURNING id`,
+		name, content, position,
+	).Scan(&id)
+	if err != nil {
+		t.Fatalf("CreateTestSnippet: failed to create snippet %q: %v", name, err)
+	}
+	return id
+}
+
 // TeardownTestDB closes the database connection.
 // Use with defer: defer TeardownTestDB(t, db)
 func TeardownTestDB(t *testing.T, db *database.DBStore) {

@@ -80,11 +80,24 @@ func TestDiceView_CanInsert_FalseWhenNotFromSession(t *testing.T) {
 	assert.False(t, app.diceView.CanInsert())
 }
 
+// openSessionInApp selects a game and session via keyboard so the session text area is active.
+func openSessionInApp(t *testing.T, app *App) {
+	t.Helper()
+	g := createGame(t, app, "Game")
+	createSession(t, app, g.ID, "Session")
+	app.gameView.Refresh()
+	testHelper.SimulateDownArrow(app.gameView.Tree, app.Application) // select game
+	testHelper.SimulateDownArrow(app.gameView.Tree, app.Application) // skip Notes
+	testHelper.SimulateDownArrow(app.gameView.Tree, app.Application) // select session
+	testHelper.SimulateEnter(app.gameView.Tree, app.Application)
+	app.SetFocus(app.sessionView.TextArea)
+}
+
 // TestDiceView_CanInsert_TrueWhenFromSession verifies that CanInsert is true when
 // the dice modal was opened from the session text area.
 func TestDiceView_CanInsert_TrueWhenFromSession(t *testing.T) {
 	app := setupTestApp(t)
-	app.SetFocus(app.sessionView.TextArea)
+	openSessionInApp(t, app)
 	openDiceModal(t, app)
 	assert.True(t, app.diceView.CanInsert())
 }
@@ -93,7 +106,7 @@ func TestDiceView_CanInsert_TrueWhenFromSession(t *testing.T) {
 // roll result into the session text area and closes the modal.
 func TestDiceView_CtrlO_InsertsResultIntoSession(t *testing.T) {
 	app := setupTestApp(t)
-	app.SetFocus(app.sessionView.TextArea)
+	openSessionInApp(t, app)
 	openDiceModal(t, app)
 
 	app.diceView.TextArea.SetText("1d6", true)

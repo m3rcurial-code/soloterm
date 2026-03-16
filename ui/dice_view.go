@@ -102,7 +102,7 @@ func (dv *DiceView) setupModal() {
 		AddItem(nil, 0, 1, false)
 
 	dv.TextArea.SetFocusFunc(func() {
-		entries := []helpEntry{{"Ctrl+R", "Roll"}}
+		entries := []helpEntry{{"Ctrl+R", "Roll"}, {"Ctrl+S", "Saved Rolls"}}
 		if dv.CanInsert() {
 			entries = append(entries, helpEntry{"Ctrl+O", "Insert"})
 		}
@@ -125,7 +125,8 @@ func (dv *DiceView) setupModal() {
 // updateTableHints scans the current text for the last active @prefix and
 // refreshes the hint view. Hides the hint view when no @ is being typed.
 func (dv *DiceView) updateTableHints() {
-	prefix, active := currentOraclePrefix(dv.TextArea.GetText())
+	_, cursor, _ := dv.TextArea.GetSelection()
+	prefix, active := currentOraclePrefix(dv.TextArea.GetText()[:cursor])
 	if !active {
 		dv.hintsActive = false
 		dv.diceModalContent.ResizeItem(dv.tableHintView, 0, 0)
@@ -169,7 +170,9 @@ func (dv *DiceView) acceptFirstHint() bool {
 		return false
 	}
 	text := dv.TextArea.GetText()
-	prefix, active := currentOraclePrefix(text)
+	_, cursor, _ := dv.TextArea.GetSelection()
+	beforeCursor := text[:cursor]
+	prefix, active := currentOraclePrefix(beforeCursor)
 	if !active {
 		return false
 	}
@@ -177,8 +180,8 @@ func (dv *DiceView) acceptFirstHint() bool {
 	if len(hints) == 0 {
 		return false
 	}
-	idx := strings.LastIndex(text, "@")
-	newText := text[:idx] + "@" + hints[0] + " "
+	idx := strings.LastIndex(beforeCursor, "@")
+	newText := text[:idx] + "@" + hints[0] + " " + text[cursor:]
 	dv.TextArea.SetText(newText, true)
 	return true
 }
@@ -228,11 +231,15 @@ func (dv *DiceView) rebuildButtons() {
 	})
 	dv.buttonRow.AddItem(nil, 1, 0, false)
 
-	// dv.addButton("Saved Rolls", 14, func() { /* TODO: open saved rolls modal */ })
+	dv.addButton("Snippets", 12, func() {
+		dv.app.HandleEvent(&SnippetShowEvent{
+			BaseEvent: BaseEvent{action: SNIPPET_SHOW},
+		})
+	})
 
 	if dv.CanInsert() && dv.resultView.GetText(false) != "" {
 		dv.buttonRow.AddItem(nil, 1, 0, false)
-		dv.addButton("Insert", 7, func() {
+		dv.addButton("Insert", 8, func() {
 			dv.app.HandleEvent(&DiceInsertResultEvent{
 				BaseEvent: BaseEvent{action: DICE_INSERT_RESULT},
 			})
@@ -274,6 +281,11 @@ func (dv *DiceView) setupKeyBindings() {
 				}
 				dv.app.SetFocus(dv.TextArea)
 			}
+			return nil
+		case tcell.KeyCtrlS:
+			dv.app.HandleEvent(&SnippetShowEvent{
+				BaseEvent: BaseEvent{action: SNIPPET_SHOW},
+			})
 			return nil
 		case tcell.KeyCtrlR:
 			dv.roll()

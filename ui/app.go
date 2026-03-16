@@ -11,6 +11,7 @@ import (
 	"soloterm/domain/game"
 	"soloterm/domain/oracle"
 	"soloterm/domain/session"
+	"soloterm/domain/snippet"
 	"soloterm/domain/tag"
 	sharedui "soloterm/shared/ui"
 
@@ -33,6 +34,7 @@ const (
 	SEARCH_MODAL_ID      string = "searchModal"
 	ORACLE_MODAL_ID      string = "oracleModal"
 	ORACLE_FORM_MODAL_ID string = "oracleFormModal"
+	SNIPPET_MODAL_ID     string = "snippetModal"
 )
 
 type AppInfo struct {
@@ -56,6 +58,7 @@ type App struct {
 	diceView      *DiceView
 	searchView    *SearchView
 	oracleView    *OracleView
+	snippetView   *SnippetView
 	fileView      *FileView
 
 	// Layout containers
@@ -84,6 +87,7 @@ func NewApp(db *database.DBStore, cfg *config.Config, info AppInfo) *App {
 	tagService := tag.NewService(sessionRepo)
 	sessionService := session.NewService(sessionRepo)
 	oracleService := oracle.NewService(oracle.NewRepository(db))
+	snippetService := snippet.NewService(snippet.NewRepository(db))
 
 	Style.Apply()
 
@@ -102,6 +106,7 @@ func NewApp(db *database.DBStore, cfg *config.Config, info AppInfo) *App {
 	app.diceView = NewDiceView(app, oracleService)
 	app.searchView = NewSearchView(app, sessionService)
 	app.oracleView = NewOracleView(app, oracleService)
+	app.snippetView = NewSnippetView(app, snippetService)
 	app.fileView = NewFileView(app)
 
 	app.setupUI()
@@ -168,6 +173,7 @@ func (a *App) setupUI() {
 		AddPage(SEARCH_MODAL_ID, a.searchView.Modal, true, false).
 		AddPage(ORACLE_MODAL_ID, a.oracleView.Modal, true, false).
 		AddPage(ORACLE_FORM_MODAL_ID, a.oracleView.FormModal, true, false).
+		AddPage(SNIPPET_MODAL_ID, a.snippetView.Modal, true, false).
 		AddPage(FILE_MODAL_ID, a.fileView.Modal, true, false).
 		AddPage(HELP_MODAL_ID, a.helpModal, true, false).
 		AddPage(CONFIRM_MODAL_ID, a.confirmModal, true, false) // Confirm always on top
@@ -505,5 +511,21 @@ func (a *App) HandleEvent(event Event) {
 		dispatch(event, a.handleOracleShowExport)
 	case ORACLE_REORDER:
 		dispatch(event, a.handleOracleReorder)
+	case SNIPPET_SHOW:
+		dispatch(event, a.handleSnippetShow)
+	case SNIPPET_CANCEL:
+		dispatch(event, a.handleSnippetCancel)
+	case SNIPPET_SAVED:
+		dispatch(event, a.handleSnippetSaved)
+	case SNIPPET_DELETE_CONFIRM:
+		dispatch(event, a.handleSnippetDeleteConfirm)
+	case SNIPPET_DELETED:
+		dispatch(event, a.handleSnippetDeleted)
+	case SNIPPET_DELETE_FAILED:
+		dispatch(event, a.handleSnippetDeleteFailed)
+	case SNIPPET_REORDER:
+		dispatch(event, a.handleSnippetReorder)
+	case SNIPPET_USE:
+		dispatch(event, a.handleSnippetUse)
 	}
 }

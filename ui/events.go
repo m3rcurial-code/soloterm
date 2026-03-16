@@ -5,6 +5,7 @@ import (
 	"soloterm/domain/game"
 	"soloterm/domain/oracle"
 	"soloterm/domain/session"
+	"soloterm/domain/snippet"
 	"soloterm/domain/tag"
 
 	"github.com/rivo/tview"
@@ -77,6 +78,15 @@ const (
 	ORACLE_SHOW_IMPORT          UserAction = "oracle_show_import"
 	ORACLE_SHOW_EXPORT          UserAction = "oracle_show_export"
 	ORACLE_REORDER              UserAction = "oracle_reorder"
+
+	SNIPPET_SHOW           UserAction = "snippet_show"
+	SNIPPET_CANCEL         UserAction = "snippet_cancel"
+	SNIPPET_SAVED          UserAction = "snippet_saved"
+	SNIPPET_DELETE_CONFIRM UserAction = "snippet_delete_confirm"
+	SNIPPET_DELETED        UserAction = "snippet_deleted"
+	SNIPPET_DELETE_FAILED  UserAction = "snippet_delete_failed"
+	SNIPPET_USE            UserAction = "snippet_use"
+	SNIPPET_REORDER        UserAction = "snippet_reorder"
 )
 
 // Base event interface
@@ -402,4 +412,43 @@ type OracleReorderEvent struct {
 	Category  string // set when moving a whole category
 	OracleID  int64  // set when moving a single oracle
 	Direction int
+}
+
+type SnippetShowEvent struct {
+	BaseEvent
+}
+
+type SnippetCancelEvent struct {
+	BaseEvent
+}
+
+type SnippetSavedEvent struct {
+	BaseEvent
+	Snippet *snippet.Snippet
+	IsNew   bool
+}
+
+type SnippetDeleteConfirmEvent struct {
+	BaseEvent
+	SnippetID int64
+}
+
+type SnippetDeletedEvent struct {
+	BaseEvent
+}
+
+type SnippetDeleteFailedEvent struct {
+	BaseEvent
+	Error error
+}
+
+type SnippetUseEvent struct {
+	BaseEvent
+	Content string
+}
+
+type SnippetReorderEvent struct {
+	BaseEvent
+	SnippetID int64
+	Direction int // -1 up, +1 down
 }

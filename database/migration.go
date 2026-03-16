@@ -49,6 +49,22 @@ func RemoveColumn(db *sqlx.DB, tableName string, column string) error {
 	return err
 }
 
+func RenameColumn(db *sqlx.DB, tableName string, columnName string, newColunnName string) error {
+	exists, err := columnExists(db, tableName, columnName)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+
+	query := fmt.Sprintf("ALTER TABLE %s RENAME COLUMN %s TO %s;", tableName, columnName, newColunnName)
+
+	// Execute the query
+	_, err = db.Exec(query)
+	return err
+}
+
 // columnExists checks if a column exists in a table
 func columnExists(db *sqlx.DB, table string, column string) (bool, error) {
 	var exists bool
