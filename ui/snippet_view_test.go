@@ -313,6 +313,94 @@ func TestSnippetView_NewSnippet_PreselectsActiveGame(t *testing.T) {
 	assert.Equal(t, "Campaign", label, "active game should be pre-selected in the dropdown")
 }
 
+// TestSnippetView_Filter_ByName verifies that typing in the filter field narrows
+// the table to snippets whose name matches.
+func TestSnippetView_Filter_ByName(t *testing.T) {
+	app := setupTestApp(t)
+	createSnippet(t, app, "Attack", "1d20+5", nil)
+	createSnippet(t, app, "Damage", "2d6", nil)
+	openSnippetModal(t, app)
+	require.Equal(t, 2, app.snippetView.table.GetRowCount())
+
+	app.snippetView.filterField.SetText("att")
+
+	assert.Equal(t, 1, app.snippetView.table.GetRowCount())
+	assert.Equal(t, "Attack", app.snippetView.table.GetCell(0, 0).Text)
+}
+
+// TestSnippetView_Filter_ByContent verifies that the filter matches against
+// snippet content as well as name.
+func TestSnippetView_Filter_ByContent(t *testing.T) {
+	app := setupTestApp(t)
+	createSnippet(t, app, "Attack", "1d20+5", nil)
+	createSnippet(t, app, "Damage", "2d6", nil)
+	openSnippetModal(t, app)
+
+	app.snippetView.filterField.SetText("2d6")
+
+	assert.Equal(t, 1, app.snippetView.table.GetRowCount())
+	assert.Equal(t, "Damage", app.snippetView.table.GetCell(0, 0).Text)
+}
+
+// TestSnippetView_Filter_CaseInsensitive verifies that filtering is case-insensitive.
+func TestSnippetView_Filter_CaseInsensitive(t *testing.T) {
+	app := setupTestApp(t)
+	createSnippet(t, app, "Attack", "1d20+5", nil)
+	openSnippetModal(t, app)
+
+	app.snippetView.filterField.SetText("ATTACK")
+
+	assert.Equal(t, 1, app.snippetView.table.GetRowCount())
+}
+
+// TestSnippetView_Filter_NoMatch_ShowsEmptyState verifies that a filter with no
+// matches shows the empty-state placeholder row.
+func TestSnippetView_Filter_NoMatch_ShowsEmptyState(t *testing.T) {
+	app := setupTestApp(t)
+	createSnippet(t, app, "Attack", "1d20+5", nil)
+	openSnippetModal(t, app)
+
+	app.snippetView.filterField.SetText("zzz")
+
+	require.Equal(t, 1, app.snippetView.table.GetRowCount())
+	assert.Nil(t, app.snippetView.table.GetCell(0, 0).GetReference(), "no-match row should not be selectable")
+}
+
+// TestSnippetView_Filter_Cleared_RestoresFullList verifies that clearing the
+// filter field restores all snippets including the section divider.
+func TestSnippetView_Filter_Cleared_RestoresFullList(t *testing.T) {
+	app := setupTestApp(t)
+	g := createGame(t, app, "Campaign")
+	require.NoError(t, app.gameView.SetCurrentGame(g.ID))
+	createSnippet(t, app, "GameSnippet", "game-content", &g.ID)
+	createSnippet(t, app, "Global", "global-content", nil)
+	openSnippetModal(t, app)
+
+	app.snippetView.filterField.SetText("game")
+	require.Equal(t, 1, app.snippetView.table.GetRowCount())
+
+	app.snippetView.filterField.SetText("")
+
+	// game snippet + divider + global snippet
+	assert.Equal(t, 3, app.snippetView.table.GetRowCount())
+}
+
+// TestSnippetView_Filter_HidesDivider verifies that the section divider is not
+// shown when a filter is active.
+func TestSnippetView_Filter_HidesDivider(t *testing.T) {
+	app := setupTestApp(t)
+	g := createGame(t, app, "Campaign")
+	require.NoError(t, app.gameView.SetCurrentGame(g.ID))
+	createSnippet(t, app, "GameSnippet", "game-content", &g.ID)
+	createSnippet(t, app, "Global", "global-content", nil)
+	openSnippetModal(t, app)
+	require.Equal(t, 3, app.snippetView.table.GetRowCount()) // includes divider
+
+	app.snippetView.filterField.SetText("e") // matches both snippets
+
+	assert.Equal(t, 2, app.snippetView.table.GetRowCount(), "divider should not appear when filter is active")
+}
+
 // TestSnippetView_EditSnippet_NoDeleteButtonOnNew verifies that Ctrl+N shows
 // no delete button, and Ctrl+E does show one.
 func TestSnippetView_EditSnippet_DeleteButtonVisibility(t *testing.T) {

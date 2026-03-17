@@ -15,12 +15,15 @@ type SnippetView struct {
 	app            *App
 	snippetService *snippet.Service
 
-	Modal     *tview.Flex // list modal — registered with pages
-	FormModal *tview.Flex // edit/new modal — registered with pages
-	frame     *tview.Frame
-	table     *tview.Table
-	Form      *SnippetForm
-	formModal *sharedui.FormModal
+	Modal       *tview.Flex // list modal — registered with pages
+	FormModal   *tview.Flex // edit/new modal — registered with pages
+	frame       *tview.Frame
+	table       *tview.Table
+	filterField *tview.InputField
+	Form        *SnippetForm
+	formModal   *sharedui.FormModal
+	allSnippets []*snippet.Snippet
+	refreshing  bool
 
 	returnFocus tview.Primitive
 }
@@ -34,10 +37,42 @@ func NewSnippetView(app *App, snippetService *snippet.Service) *SnippetView {
 
 func (sv *SnippetView) setup() {
 	sv.setupTable()
+	sv.setupFilterField()
 	sv.Form = NewSnippetForm()
 	sv.setupLayout()
 	sv.setupFormModal()
 	sv.setupKeyBindings()
+}
+
+func (sv *SnippetView) setupFilterField() {
+	sv.filterField = tview.NewInputField().
+		SetLabel("Filter: ").
+		SetFieldWidth(0)
+
+	sv.filterField.SetChangedFunc(func(text string) {
+		if sv.refreshing {
+			return
+		}
+		if text == "" {
+			sv.Refresh()
+			return
+		}
+		q := strings.ToLower(text)
+		var filtered []*snippet.Snippet
+		for _, s := range sv.allSnippets {
+			if strings.Contains(strings.ToLower(s.Name), q) || strings.Contains(strings.ToLower(s.Content), q) {
+				filtered = append(filtered, s)
+			}
+		}
+		sv.renderTable(filtered, nil)
+	})
+
+	sv.filterField.SetFocusFunc(func() {
+		sv.frame.SetBorderColor(Style.BorderFocusColor)
+	})
+	sv.filterField.SetBlurFunc(func() {
+		sv.frame.SetBorderColor(Style.BorderColor)
+	})
 }
 
 func (sv *SnippetView) setupTable() {
@@ -52,7 +87,13 @@ func (sv *SnippetView) setupTable() {
 }
 
 func (sv *SnippetView) setupLayout() {
-	sv.frame = tview.NewFrame(sv.table).
+	content := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(sv.filterField, 1, 0, false).
+		AddItem(nil, 1, 0, false).
+		AddItem(sv.table, 0, 1, true)
+
+	sv.frame = tview.NewFrame(content).
 		SetBorders(1, 0, 0, 0, 1, 1)
 	sv.frame.SetBorder(true).
 		SetTitleAlign(tview.AlignLeft).
@@ -119,6 +160,13 @@ func (sv *SnippetView) setupKeyBindings() {
 
 	sv.Modal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
+		case tcell.KeyTab:
+			if sv.filterField.HasFocus() {
+				sv.app.SetFocus(sv.table)
+			} else {
+				sv.app.SetFocus(sv.filterField)
+			}
+			return nil
 		case tcell.KeyCtrlN:
 			sv.app.HandleEvent(&SnippetShowNewEvent{
 				BaseEvent: BaseEvent{action: SNIPPET_SHOW_NEW},
@@ -253,7 +301,9 @@ func (sv *SnippetView) refreshGames() {
 
 // Refresh reloads snippets from the database into the table
 func (sv *SnippetView) Refresh() {
-	sv.table.Clear()
+	sv.refreshing = true
+	sv.filterField.SetText("")
+	sv.refreshing = false
 
 	activeGameID := sv.activeGameID()
 
@@ -275,7 +325,15 @@ func (sv *SnippetView) Refresh() {
 		return
 	}
 
-	if len(gameSnippets)+len(globalSnippets) == 0 {
+	sv.allSnippets = append(gameSnippets, globalSnippets...)
+
+	sv.renderTable(gameSnippets, globalSnippets)
+}
+
+func (sv *SnippetView) renderTable(scoped []*snippet.Snippet, global []*snippet.Snippet) {
+	sv.table.Clear()
+
+	if len(scoped)+len(global) == 0 {
 		sv.table.SetCell(0, 0, tview.NewTableCell("No snippets yet. Press Ctrl+N to add one.").
 			SetTextColor(Style.EmptyStateMessageColor).
 			SetSelectable(false))
@@ -283,15 +341,15 @@ func (sv *SnippetView) Refresh() {
 	}
 
 	row := 0
-	for _, s := range gameSnippets {
+	for _, s := range scoped {
 		sv.addSnippetRow(row, s)
 		row++
 	}
-	if len(gameSnippets) > 0 && len(globalSnippets) > 0 {
+	if len(scoped) > 0 && len(global) > 0 {
 		sv.addSectionDivider(row, "─── Global ───")
 		row++
 	}
-	for _, s := range globalSnippets {
+	for _, s := range global {
 		sv.addSnippetRow(row, s)
 		row++
 	}
