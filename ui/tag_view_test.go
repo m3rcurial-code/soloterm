@@ -336,6 +336,100 @@ func TestTagView_NotesTagsExcludesClosed(t *testing.T) {
 	assert.NotEqual(t, -1, findTagInTable(app.tagView.TagTable, "L:Dungeon"), "Dungeon is open in notes — must appear in Notes Tags")
 }
 
+// TestTagView_Filter_ByLabel verifies that typing in the filter field narrows
+// the table to tags whose label matches.
+func TestTagView_Filter_ByLabel(t *testing.T) {
+	app := setupTestApp(t)
+	openTagModal(t, app)
+	totalRows := app.tagView.TagTable.GetRowCount()
+	require.Greater(t, totalRows, 1)
+
+	app.tagView.filterField.SetText("clock")
+
+	// Header row + only Clock tag
+	require.Equal(t, 2, app.tagView.TagTable.GetRowCount())
+	assert.Equal(t, "Clock", app.tagView.TagTable.GetCell(1, 0).Text)
+}
+
+// TestTagView_Filter_ByTemplate verifies that the filter matches against
+// the template column as well as the label.
+func TestTagView_Filter_ByTemplate(t *testing.T) {
+	app := setupTestApp(t)
+	openTagModal(t, app)
+
+	// Find a tag with a known template prefix and filter by part of the template
+	app.tagView.filterField.SetText("[N:")
+
+	rows := app.tagView.TagTable.GetRowCount()
+	require.Greater(t, rows, 1, "at least one tag should match the template filter")
+	for row := 1; row < rows; row++ {
+		ref := app.tagView.TagTable.GetCell(row, 1).GetReference()
+		if ref != nil {
+			assert.Contains(t, ref.(string), "[N:")
+		}
+	}
+}
+
+// TestTagView_Filter_CaseInsensitive verifies that filtering is case-insensitive.
+func TestTagView_Filter_CaseInsensitive(t *testing.T) {
+	app := setupTestApp(t)
+	openTagModal(t, app)
+
+	app.tagView.filterField.SetText("CLOCK")
+
+	require.Equal(t, 2, app.tagView.TagTable.GetRowCount())
+	assert.Equal(t, "Clock", app.tagView.TagTable.GetCell(1, 0).Text)
+}
+
+// TestTagView_Filter_NoMatch_ShowsHeaderOnly verifies that a filter with no
+// matches leaves only the header row.
+func TestTagView_Filter_NoMatch_ShowsHeaderOnly(t *testing.T) {
+	app := setupTestApp(t)
+	openTagModal(t, app)
+
+	app.tagView.filterField.SetText("zzz")
+
+	assert.Equal(t, 1, app.tagView.TagTable.GetRowCount(), "only header row should remain when nothing matches")
+}
+
+// TestTagView_Filter_HidesSectionDividers verifies that section dividers do not
+// appear when a filter is active.
+func TestTagView_Filter_HidesSectionDividers(t *testing.T) {
+	app := setupTestApp(t)
+	g := createGame(t, app, "Test Game")
+	s := createSession(t, app, g.ID, "Test Session")
+	s.Content = "[N:Guard | Alert]"
+	app.sessionView.sessionService.Save(s)
+	app.gameView.Refresh()
+	app.gameView.SelectSession(s.ID)
+	require.NoError(t, app.gameView.SetCurrentGame(g.ID))
+	app.sessionView.SelectSession(s.ID)
+	app.SetFocus(app.sessionView.TextArea)
+	testHelper.SimulateKey(app.sessionView.TextArea, app.Application, tcell.KeyCtrlT)
+
+	app.tagView.filterField.SetText("guard")
+
+	for row := 1; row < app.tagView.TagTable.GetRowCount(); row++ {
+		cell := app.tagView.TagTable.GetCell(row, 0)
+		assert.NotContains(t, cell.Text, "───", "section dividers should not appear when filter is active")
+	}
+}
+
+// TestTagView_Filter_Cleared_RestoresFullList verifies that clearing the filter
+// field restores all sections and rows.
+func TestTagView_Filter_Cleared_RestoresFullList(t *testing.T) {
+	app := setupTestApp(t)
+	openTagModal(t, app)
+	fullCount := app.tagView.TagTable.GetRowCount()
+
+	app.tagView.filterField.SetText("clock")
+	require.Equal(t, 2, app.tagView.TagTable.GetRowCount())
+
+	app.tagView.filterField.SetText("")
+
+	assert.Equal(t, fullCount, app.tagView.TagTable.GetRowCount(), "full list should be restored after clearing filter")
+}
+
 func TestTagView_NavigateWithArrowKeys(t *testing.T) {
 	app := setupTestApp(t)
 	openTagModal(t, app)

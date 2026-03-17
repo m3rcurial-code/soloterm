@@ -21,6 +21,10 @@ type TagView struct {
 	tagFrame        *tview.Frame
 	tagList         *tview.List
 	TagTable        *tview.Table
+	filterField     *tview.InputField
+	allTags         []tag.TagType
+	tagsResult      *tag.TagsForGame
+	refreshing      bool
 	returnFocus     tview.Primitive // Field to restore focus to after tag selection
 }
 
@@ -35,9 +39,40 @@ func NewTagView(app *App, cfg *config.Config, tagService *tag.Service) *TagView 
 
 // Setup initializes all tag UI components
 func (tv *TagView) Setup() {
+	tv.setupFilterField()
 	tv.setupModal()
 	tv.setupKeyBindings()
+}
 
+func (tv *TagView) setupFilterField() {
+	tv.filterField = tview.NewInputField().
+		SetLabel("Filter: ").
+		SetFieldWidth(0)
+
+	tv.filterField.SetChangedFunc(func(text string) {
+		if tv.refreshing {
+			return
+		}
+		if text == "" {
+			tv.Refresh()
+			return
+		}
+		q := strings.ToLower(text)
+		var filtered []tag.TagType
+		for _, t := range tv.allTags {
+			if strings.Contains(strings.ToLower(t.Label), q) || strings.Contains(strings.ToLower(t.Template), q) {
+				filtered = append(filtered, t)
+			}
+		}
+		tv.renderFiltered(filtered)
+	})
+
+	tv.filterField.SetFocusFunc(func() {
+		tv.tagFrame.SetBorderColor(Style.BorderFocusColor)
+	})
+	tv.filterField.SetBlurFunc(func() {
+		tv.tagFrame.SetBorderColor(Style.BorderColor)
+	})
 }
 
 // setupModal configures the tag modal
@@ -49,9 +84,11 @@ func (tv *TagView) setupModal() {
 		SetFixed(1, 0)              // Fix the header and divider rows
 	tv.TagTable.SetSelectedStyle(tcell.Style{}.Background(tcell.ColorAqua).Foreground(tcell.ColorBlack))
 
-	// Create container that holds the tag selector and help text
+	// Create container that holds the filter field and tag table
 	tv.tagModalContent = tview.NewFlex().
 		SetDirection(tview.FlexRow).
+		AddItem(tv.filterField, 1, 0, false).
+		AddItem(nil, 1, 0, false).
 		AddItem(tv.TagTable, 0, 1, true)
 
 	// Wrap in a frame for padding between border and content
@@ -90,17 +127,9 @@ func (tv *TagView) setupModal() {
 }
 
 func (tv *TagView) Refresh() {
-	tv.TagTable.Clear()
-
-	// Add header row
-	tv.TagTable.SetCell(0, 0, tview.NewTableCell("Tag").
-		SetTextColor(tcell.ColorYellow).
-		SetAlign(tview.AlignLeft).
-		SetSelectable(false))
-	tv.TagTable.SetCell(0, 1, tview.NewTableCell("Template").
-		SetTextColor(tcell.ColorYellow).
-		SetAlign(tview.AlignLeft).
-		SetSelectable(false))
+	tv.refreshing = true
+	tv.filterField.SetText("")
+	tv.refreshing = false
 
 	// Get the currently active game
 	var gameID int64
@@ -111,35 +140,64 @@ func (tv *TagView) Refresh() {
 	}
 
 	// Load tags: configured, active (from sessions), and notes
-	tagsResult, err := tv.tagService.LoadTagsForGame(gameID, notesContent, tv.cfg.TagTypes, tv.cfg.TagExcludeWords)
+	result, err := tv.tagService.LoadTagsForGame(gameID, notesContent, tv.cfg.TagTypes, tv.cfg.TagExcludeWords)
 	if err != nil {
-		tagsResult = &tag.TagsForGame{Config: tv.cfg.TagTypes}
+		result = &tag.TagsForGame{Config: tv.cfg.TagTypes}
 	}
 
-	currentRow := 1
+	tv.tagsResult = result
+	tv.allTags = append(append(result.Config, result.Active...), result.Notes...)
 
-	for _, tagType := range tagsResult.Config {
+	tv.renderTagsResult(result)
+}
+
+func (tv *TagView) renderTagsResult(result *tag.TagsForGame) {
+	tv.TagTable.Clear()
+	tv.addTableHeader()
+
+	currentRow := 1
+	for _, tagType := range result.Config {
 		tv.addTagRow(currentRow, tagType)
 		currentRow++
 	}
-
-	if len(tagsResult.Active) > 0 {
+	if len(result.Active) > 0 {
 		tv.addSectionHeader(currentRow, "─── Active Tags ───")
 		currentRow++
-		for _, tagType := range tagsResult.Active {
+		for _, tagType := range result.Active {
+			tv.addTagRow(currentRow, tagType)
+			currentRow++
+		}
+	}
+	if len(result.Notes) > 0 {
+		tv.addSectionHeader(currentRow, "─── Notes Tags ───")
+		currentRow++
+		for _, tagType := range result.Notes {
 			tv.addTagRow(currentRow, tagType)
 			currentRow++
 		}
 	}
 
-	if len(tagsResult.Notes) > 0 {
-		tv.addSectionHeader(currentRow, "─── Notes Tags ───")
-		currentRow++
-		for _, tagType := range tagsResult.Notes {
-			tv.addTagRow(currentRow, tagType)
-			currentRow++
-		}
+	tv.TagTable.Select(1, 0)
+}
+
+func (tv *TagView) renderFiltered(tags []tag.TagType) {
+	tv.TagTable.Clear()
+	tv.addTableHeader()
+	for i, tagType := range tags {
+		tv.addTagRow(i+1, tagType)
 	}
+	tv.TagTable.Select(1, 0)
+}
+
+func (tv *TagView) addTableHeader() {
+	tv.TagTable.SetCell(0, 0, tview.NewTableCell("Tag").
+		SetTextColor(tcell.ColorYellow).
+		SetAlign(tview.AlignLeft).
+		SetSelectable(false))
+	tv.TagTable.SetCell(0, 1, tview.NewTableCell("Template").
+		SetTextColor(tcell.ColorYellow).
+		SetAlign(tview.AlignLeft).
+		SetSelectable(false))
 }
 
 func (tv *TagView) addSectionHeader(row int, label string) {
@@ -187,6 +245,18 @@ func (tv *TagView) selectTag() {
 }
 
 func (tv *TagView) setupKeyBindings() {
+	tv.Modal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			if tv.filterField.HasFocus() {
+				tv.app.SetFocus(tv.TagTable)
+			} else {
+				tv.app.SetFocus(tv.filterField)
+			}
+			return nil
+		}
+		return event
+	})
+
 	tv.TagTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 
 		switch event.Key() {
