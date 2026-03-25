@@ -73,30 +73,34 @@ Depending on the game you're playing, the entire character sheet may fit in this
 You can manage random tables right within the application. Once you have tables, you can roll on them in the dice roller. You can also import and export tables for easy management.
 
 ## Rolling Dice
-![Screenshot](docs/rolling_dice.png?v=1)
+![Screenshot](docs/rolling_dice.png?v=2)
 
 You can roll dice from anywhere in the app. It follows the typical dice notation and allows tagging rolls with a label.
 
 When launching the roller from within the session log, you can insert the roll result where the cursor is in the text area.
 
 ### Rolling On Lists
-![Screenshot](docs/roll_lists.png)
+![Screenshot](docs/roll_lists.png?v=1)
 
 Sometimes you want to select from a random list of things. The dice roller allows you to define a list and pick a random entry. You can also adjust the number of entries by adding a number for it. The dice roller will include the entry the number of times provided, increasing the likelihood of it being selected.
 
 ### Rolling On Tables
-![Screenshot](docs/roll_tables_display.png)
+![Screenshot](docs/roll_tables_display.png?v=1)
 
 When you've added random tables to the application, you can easily roll on them by typing `@` in the roller. The list of tables will appear. As you start typing, the list will filter to matching results. If the top entry in the list matches, hit the tab key to select it.
 
-![Screenshot](docs/roll_tables.png)
+![Screenshot](docs/roll_tables.png?v=1)
 
 The roller will then pick an entry from the table.
 
 You can include a table with other dice or lists and the roller will select an entry from it.
 
 ### Roll Snippets
+![Screenshot](docs/snippets.png)
+
 You can save frequently used rolls as a snippet, then easily select and use it in the roller. It speeds up rolling, especially on multiple tables. You can get to the Snippets from the Roll modal.
+
+You can have game specific snippets and global snippets which are available to all games.
 
 # Installing
 
