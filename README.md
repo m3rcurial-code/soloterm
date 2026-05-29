@@ -102,6 +102,44 @@ You can save frequently used rolls as a snippet, then easily select and use it i
 
 You can have game specific snippets and global snippets which are available to all games.
 
+# Building from Source
+
+Since SoloTerm is built with Go it only needs a couple dependencies to build it from source. 
+
+## 1. Dependencies
+1) Make sure you have Go installed in whichever way is easiest for your OS.
+2) You will also need `make` on your system to be able to build.
+
+## 2. Build for your target
+The `Makefile` is structured to build for individual systems or it can build all of the binaries/executables.
+
+The build options are:
+- all
+- clean
+- help
+- linux
+- mac
+- windows
+
+If you need some help understanding what your options are, just run `make help`.
+
+```bash
+> make help
+all: Builds soloterm for all systems.
+clean: Removes any build binaries / executables from the bin folder.
+help: Show help for each of the Makefile recipes.
+linux: Build the arm64 and x86/x64 binaries for Linux systems.
+mac: Build the arm64 and x86/x64 binaries for Mac systems.
+windows: Build the arm64 and x86/x64 executables for Windows systems.
+```
+
+**Optional:** Make a symbolic link that points to your built version of SoloTerm so you can test local changes/modifications quickly:
+
+```bash
+sudo ln -s ~/soloterm/bin/soloterm_Linux_x86_64 /usr/local/bin/soloterm
+soloterm
+```
+
 # Installing
 
 SoloTerm is a single binary with no dependencies. Download it, make it executable, and run it.
@@ -137,7 +175,7 @@ If macOS blocks the app, go to **System Settings → Privacy & Security** and cl
 ./soloterm_Darwin_arm64   # replace with your downloaded filename
 ```
 
-**Optional:** move the binary somewhere on your PATH so you can launch it from anywhere:
+**Optional:** Move the binary somewhere on your PATH so you can launch it from anywhere:
 
 ```bash
 mv soloterm_Darwin_arm64 /usr/local/bin/soloterm
